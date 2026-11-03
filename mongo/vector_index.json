@@ -1,0 +1,21 @@
+{
+  "mappings": {
+    "dynamic": true,
+    "fields": {
+      "embedding_vector": {
+        "dimensions": 768,
+        "similarity": "cosine",
+        "type": "knnVector"
+      },
+      "metadata.capacity": {
+        "type": "filter"
+      },
+      "metadata.dept_code": {
+        "type": "filter"
+      },
+      "metadata.requires_approval": {
+        "type": "filter"
+      }
+    }
+  }
+}
