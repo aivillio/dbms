@@ -1,10 +1,34 @@
 // MongoDB Seed Script for Smart Campus Event & Resource Booking System
-// Usage: mongosh "mongodb://localhost:27017/smart_campus_nosql" seed_embeddings.js
-// or via Node: node mongo/seed_embeddings.js
+// Usage: node mongo/seed_embeddings.js
 
+const fs = require('fs');
+const path = require('path');
 const { MongoClient } = require('mongodb');
 
-const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/smart_campus_nosql';
+// Automatically load .env.local if present
+try {
+  const envPath = path.resolve(__dirname, '../.env.local');
+  if (fs.existsSync(envPath)) {
+    const lines = fs.readFileSync(envPath, 'utf8').split('\n');
+    for (const line of lines) {
+      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      if (match) {
+        let val = match[2] ? match[2].trim() : '';
+        val = val.replace(/^['"](.*)['"]$/, '$1'); // strip quotes
+        process.env[match[1]] = val;
+      }
+    }
+  }
+} catch (e) {
+  console.warn("Could not load .env.local file automatically:", e.message);
+}
+
+let uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/smart_campus_nosql';
+// Clean up accidental angle brackets in password if present: :<pass>@ -> :pass@
+uri = uri.replace(/:<([^>]+)>@/, ':$1@');
+
+console.log("Connecting to MongoDB target:", uri.replace(/:([^@:]+)@/, ':****@'));
+
 const client = new MongoClient(uri);
 
 // Helper to generate normalized mock 768-dim vector
@@ -23,7 +47,7 @@ function generateMockVector(seed) {
 async function seedMongo() {
   try {
     await client.connect();
-    console.log("Connected to MongoDB at", uri);
+    console.log("Connected successfully to MongoDB Atlas!");
     const db = client.db('smart_campus_nosql');
 
     // 1. Vector Search Collection
@@ -109,7 +133,9 @@ async function seedMongo() {
     });
     console.log("Inserted sample unstructured telemetry audit log.");
 
+    console.log("\n=============================================");
     console.log("MongoDB initialization and seeding complete!");
+    console.log("=============================================");
   } finally {
     await client.close();
   }
