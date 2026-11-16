@@ -108,6 +108,7 @@ export async function createBookingAction(input: CreateBookingInput) {
     await connection.commit();
     revalidatePath("/bookings");
     revalidatePath("/dashboard");
+    revalidatePath("/admin/analytics");
 
     return {
       success: true,
@@ -124,6 +125,70 @@ export async function createBookingAction(input: CreateBookingInput) {
       success: false,
       error: error.message || "An unexpected database error occurred.",
     };
+  } finally {
+    connection.release();
+  }
+}
+
+/**
+ * UPDATE Operation (Corresponds to Query 7.2)
+ * Cancels a reservation by updating its status to 'CANCELLED'.
+ */
+export async function cancelBookingAction(bookingId: number) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [result]: any = await connection.query(
+      `UPDATE BOOKINGS SET status = 'CANCELLED' WHERE booking_id = ?`,
+      [bookingId]
+    );
+
+    if (result.affectedRows === 0) {
+      await connection.rollback();
+      return { success: false, error: "Booking not found or already cancelled." };
+    }
+
+    await connection.commit();
+    revalidatePath("/bookings");
+    revalidatePath("/dashboard");
+    revalidatePath("/admin/analytics");
+    return { success: true, message: `Booking #${bookingId} successfully cancelled.` };
+  } catch (error: any) {
+    await connection.rollback();
+    return { success: false, error: error.message };
+  } finally {
+    connection.release();
+  }
+}
+
+/**
+ * DELETE Operation (Corresponds to Query 7.3)
+ * Purges a cancelled or rejected reservation from MySQL (cascades to junction tables).
+ */
+export async function deleteBookingAction(bookingId: number) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [result]: any = await connection.query(
+      `DELETE FROM BOOKINGS WHERE booking_id = ?`,
+      [bookingId]
+    );
+
+    if (result.affectedRows === 0) {
+      await connection.rollback();
+      return { success: false, error: "Booking not found." };
+    }
+
+    await connection.commit();
+    revalidatePath("/bookings");
+    revalidatePath("/dashboard");
+    revalidatePath("/admin/analytics");
+    return { success: true, message: `Booking #${bookingId} permanently deleted.` };
+  } catch (error: any) {
+    await connection.rollback();
+    return { success: false, error: error.message };
   } finally {
     connection.release();
   }
