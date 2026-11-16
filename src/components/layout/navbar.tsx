@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, Search, ShieldCheck, Home } from "lucide-react";
+import { Calendar, Search, ShieldCheck, Home, BarChart3 } from "lucide-react";
 
 export default function Navbar() {
   return (
@@ -29,6 +29,9 @@ export default function Navbar() {
           </Link>
           <Link href="/admin/approvals" className="flex items-center gap-1.5 hover:text-blue-200 transition">
             <ShieldCheck className="w-4 h-4" /> Approvals
+          </Link>
+          <Link href="/admin/analytics" className="flex items-center gap-1.5 hover:text-blue-200 transition text-yellow-300 font-semibold">
+            <BarChart3 className="w-4 h-4" /> Analytics
           </Link>
         </nav>
 
